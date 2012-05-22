@@ -1,0 +1,1469 @@
+;;;
+;;; cairolib.stub
+;;;
+;;; MIT License
+;;; Copyright 2012 aharisu
+;;; All rights reserved.
+;;;
+;;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;;; of this software and associated documentation files (the "Software"), to deal
+;;; in the Software without restriction, including without limitation the rights
+;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+;;; copies of the Software, and to permit persons to whom the Software is
+;;; furnished to do so, subject to the following conditions:
+;;;
+;;; The above copyright notice and this permission notice shall be included in all
+;;; copies or substantial portions of the Software.
+;;;
+;;;
+;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+;;; SOFTWARE.
+;;;
+;;;
+;;; aharisu
+;;; foo.yobina@gmail.com
+;;;
+
+"
+#include<cairo.h>
+
+#include \"gauche_cairo.h\"
+#include \"cairo_type.gen.h\"
+
+#ifdef HAVE_LIBNNVECTOR
+#include <nnvector.h>
+#endif
+
+#undef NULL
+#define NULL 0
+"
+
+(include "macro.stub.header")
+(include "cairo_type.gen.stub.header")
+
+(define-constant c:null (c "SCM_UNDEFINED"))
+
+;;cairo_content_t
+(define-enum CAIRO_CONTENT_COLOR)
+(define-enum CAIRO_CONTENT_ALPHA)
+(define-enum CAIRO_CONTENT_COLOR_ALPHA)
+
+
+(define-cproc cairo-status->strng (status::<fixnum>) :: <const-cstring>
+  (result (cairo_status_to_string (cast cairo_status_t status))))
+
+(define-cclass <cairo-matrix>
+  :built-in :struct
+  "Scmcairo_matrix_t*" "Scm_cairo_matrix_tClass"
+  ()
+  (
+   (xx :type <real>)
+   (yx :type <real>)
+   (xy :type <real>)
+   (yy :type <real>)
+   (x0 :type <real>)
+   (y0 :type <real>)
+   )
+  (printer #t)
+  (compare #t))
+
+;;
+;;cairo_t
+;;
+(define-cproc cairo-create (target::<cairo-surface>) :: <cairo>
+  (ENSURE_NOT_NULL target)
+  (result (cairo_create target)))
+
+(define-cproc cairo-reference (cairo::<cairo>) :: <cairo>
+  (ENSURE_NOT_NULL cairo)
+  (result (cairo_reference cairo)))
+
+(define-cproc cairo-destroy (cairo::<cairo>) :: <void>
+  (when cairo
+    (cairo_destroy cairo)
+    (set! (-> (SCM_FOREIGN_POINTER cairo-scm) ptr) 0)))
+
+(define-cproc cairo-get-reference-count (cairo::<cairo>) :: <uint>
+  (ENSURE_NOT_NULL cairo)
+  (result (cairo_get_reference_count cairo)))
+
+(define-cproc cairo-save (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_save cairo))
+
+(define-cproc cairo-restore (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_restore cairo))
+
+(define-cproc cairo-push-group (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_push_group cairo))
+
+;;;;
+;;@param content {@ CAIRO_CONTENT_ALPHA CAIRO_CONTENT_COLOR CAIRO_CONTENT_COLOR_ALPHA}
+(define-cproc cairo-push-group-with-content (cairo::<cairo> content::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_push_group_with_content cairo (cast cairo_content_t content)))
+
+(define-cproc cairo-pop-group (cairo::<cairo>) :: <cairo-pattern>
+  (ENSURE_NOT_NULL cairo)
+  (result (cairo_pop_group cairo)))
+
+(define-cproc cairo-pop-group-to-source (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_pop_group_to_source cairo))
+
+;;cairo_operator_t
+(define-enum CAIRO_OPERATOR_CLEAR)
+
+(define-enum CAIRO_OPERATOR_SOURCE)
+(define-enum CAIRO_OPERATOR_OVER)
+(define-enum CAIRO_OPERATOR_IN)
+(define-enum CAIRO_OPERATOR_OUT)
+(define-enum CAIRO_OPERATOR_ATOP)
+
+(define-enum CAIRO_OPERATOR_DEST)
+(define-enum CAIRO_OPERATOR_DEST_OVER)
+(define-enum CAIRO_OPERATOR_DEST_IN)
+(define-enum CAIRO_OPERATOR_DEST_OUT)
+(define-enum CAIRO_OPERATOR_DEST_ATOP)
+
+(define-enum CAIRO_OPERATOR_XOR)
+(define-enum CAIRO_OPERATOR_ADD)
+(define-enum CAIRO_OPERATOR_SATURATE)
+
+;;;;;
+;;@param op {@ CAIRO_OPERATOR_CLEAR
+;; CAIRO_OPERATOR_SOURCE
+;; CAIRO_OPERATOR_OVER
+;; CAIRO_OPERATOR_IN
+;; CAIRO_OPERATOR_OUT
+;; CAIRO_OPERATOR_ATOP
+;; CAIRO_OPERATOR_DEST
+;; CAIRO_OPERATOR_OVER_OVER
+;; CAIRO_OPERATOR_OVER_IN
+;; CAIRO_OPERATOR_OVER_OUT
+;; CAIRO_OPERATOR_OVER_ATOP
+;; CAIRO_OPERATOR_OVER_XOR
+;; CAIRO_OPERATOR_OVER_ADD
+;; CAIRO_OPERATOR_OVER_SATURATE}
+(define-cproc cairo-set-operator (cairo::<cairo> op::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_operator cairo (cast cairo_operator_t op)))
+
+(define-cproc cairo-set-source (cairo::<cairo> source::<cairo-pattern>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_source cairo source))
+
+(define-cproc cairo-set-source-rgb (cairo::<cairo> red::<real> green::<real> blue::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_source_rgb cairo red green blue))
+
+(define-cproc cairo-set-source-rgba (cairo::<cairo> red::<real> green::<real> blue::<real> alpha::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_source_rgba cairo red green blue alpha))
+
+(define-cproc cairo-set-source-surface (cairo::<cairo> surface::<cairo-surface> x::<real> y::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (ENSURE_NOT_NULL surface)
+  (cairo_set_source_surface cairo surface x y))
+
+(define-cproc cairo-set-tolerance (cairo::<cairo> tolerance::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_tolerance cairo tolerance))
+
+;; cairo_antialias_t
+(define-enum CAIRO_ANTIALIAS_DEFAULT)
+(define-enum CAIRO_ANTIALIAS_NONE)
+(define-enum CAIRO_ANTIALIAS_GRAY)
+(define-enum CAIRO_ANTIALIAS_SUBPIXEL)
+
+;;;;;
+;;@param antialias {@ CAIRO_ANTIALIAS_DEFAULT
+;; CAIRO_ANTIALIAS_NONE
+;; CAIRO_ANTIALIAS_GRAY
+;; CAIRO_ANTIALIAS_SUBPIXEL }
+(define-cproc cairo-set-antialias (cairo::<cairo> antialias::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_fill_rule cairo (cast cairo_fill_rule_t antialias)))
+
+;; cairo_fill_rule_t
+(define-enum CAIRO_FILL_RULE_WINDING)
+(define-enum CAIRO_FILL_RULE_EVEN_ODD)
+
+;;;;;
+;;@param fill-rule {@
+;; CAIRO_FILL_RULE_WINDING
+;; CAIRO_FILL_RULE_EVEN_ODD }
+(define-cproc cairo-set-fill-rule (cairo::<cairo> fill-rule::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_fill_rule cairo (cast cairo_fill_rule_t fill-rule)))
+
+(define-cproc cairo-set-line-width (cairo::<cairo> width::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_line_width cairo width))
+
+
+;;cairo_line_cap_t
+(define-enum CAIRO_LINE_CAP_BUTT)
+(define-enum CAIRO_LINE_CAP_ROUND)
+(define-enum CAIRO_LINE_CAP_SQUARE)
+
+;;;;;
+;;@param line-cap {@
+;; CAIRO_LINE_CAP_BUTT
+;; CAIRO_LINE_CAP_ROUND
+;; CAIRO_LINE_CAP_SQUARE }
+(define-cproc cairo-set-line-cap (cairo::<cairo> line-cap::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_line_cap cairo (cast cairo_line_cap_t line-cap)))
+
+;;cairo_line_join_t
+(define-enum CAIRO_LINE_JOIN_MITER)
+(define-enum CAIRO_LINE_JOIN_ROUND)
+(define-enum CAIRO_LINE_JOIN_BEVEL)
+
+;;;;;
+;; @param line-join {@ CAIRO_LINE_JOIN_MITER
+;; CAIRO_LINE_JOIN_ROUND
+;; CAIRO_LINE_JOIN_BEVEL }
+(define-cproc cairo-set-line-join (cairo::<cairo> line-join::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_line_join cairo (cast cairo_line_join_t line-join)))
+
+
+"
+#define TMP_ARY_SIZE 10
+"
+;;;;;
+;;@param dashes {@ <f64vector> <vector> <list>}
+(define-cproc cairo-set-dash (cairo::<cairo> dashes::<top> offset::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (let* ([size::int]
+         [p-dashes::double*]
+         [tmp-ary :: (.array double (TMP_ARY_SIZE))])
+    (cond
+      [(is-type? dashes <f64vector>)
+       (set! size (SCM_F64VECTOR_SIZE dashes))
+       (set! p-dashes (SCM_F64VECTOR_ELEMENTS dashes))]
+      [(is-type? dashes <vector>)
+       (set! size (SCM_VECTOR_SIZE dashes))
+       (vector-to-ary dashes p-dashes tmp-ary TMP_ARY_SIZE _double_t double-elem-assign)]
+      [(is-type? dashes <list>)
+       (list-to-ary dashes p-dashes tmp-ary TMP_ARY_SIZE size _double_t double-elem-assign)]
+      [else (Scm_Error "dashes requires a <f64vector> or <vector> or <list>, but got %S" dashes)])
+    (cairo_set_dash cairo p-dashes size offset)))
+
+(define-cproc cairo-set-miter-limit (cairo::<cairo> limit::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_miter_limit cairo limit))
+
+(define-cproc cairo-translate (cairo::<cairo> tx::<real> ty::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_translate cairo tx ty))
+
+(define-cproc cairo-scale (cairo::<cairo> sx::<real> sy::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_scale cairo sx sy))
+
+(define-cproc cairo-rotate (cairo::<cairo> angle::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_rotate cairo angle))
+
+(define-cproc cairo-transform (cairo::<cairo> matrix::<cairo-matrix>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_transform cairo (& matrix)))
+
+(define-cproc cairo-identity-matrix (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_identity_matrix cairo))
+
+;;;;;
+;;@return (values x y)
+(define-cproc cairo-user-to-device (cairo::<cairo> x::<real> y::<real>) :: (<real> <real>)
+  (ENSURE_NOT_NULL cairo)
+  (cairo_user_to_device cairo (& x) (& y))
+  (result x y))
+
+;;;;;
+;;@return (values dx dy)
+(define-cproc cairo-user-to-device-distance (cairo::<cairo> dx::<real> dy::<real>) :: (<real> <real>)
+  (ENSURE_NOT_NULL cairo)
+  (cairo_user_to_device_distance cairo (& dx) (& dy))
+  (result dx dy))
+
+;;;;;
+;;@return (values x y)
+(define-cproc cairo-device-to-user (cairo::<cairo> x::<real> y::<real>) :: (<real> <real>)
+  (ENSURE_NOT_NULL cairo)
+  (cairo_device_to_user cairo (& x) (& y))
+  (result x y))
+
+;;;;;
+;;@return (values dx dy)
+(define-cproc cairo-device-to-user-distance (cairo::<cairo> dx::<real> dy::<real>) :: (<real> <real>)
+  (ENSURE_NOT_NULL cairo)
+  (cairo_device_to_user_distance cairo (& dx) (& dy))
+  (result dx dy))
+
+;;
+;;Path creation functions
+;;
+
+(define-cproc cairo-new-path (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_new_path cairo))
+
+(define-cproc cairo-move-to (cairo::<cairo> x::<real> y::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_move_to cairo x y))
+
+(define-cproc cairo-new-sub-path (cairo::<cairo>)
+  (ENSURE_NOT_NULL cairo)
+  (cairo_new_sub_path cairo))
+
+(define-cproc cairo-line-to (cairo::<cairo> x::<real> y::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_line_to cairo x y))
+
+(define-cproc cairo-curve-to (cairo::<cairo> 
+                             x1::<real> y1::<real>
+                             x2::<real> y2::<real>
+                             x3::<real> y3::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_curve_to cairo x1 y1 x2 y2 x3 y3))
+
+(define-cproc cairo-arc (cairo::<cairo>
+                        xc::<real> yc::<real>
+                        radius::<real>
+                        angle1::<real> angle2::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_arc cairo xc yc radius angle1 angle2))
+
+(define-cproc cairo-arc-negative (cairo::<cairo>
+                                 xc::<real> yc::<real>
+                                 radius::<real>
+                                 angle1::<real> angle2::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_arc_negative cairo xc yc radius angle1 angle2))
+
+(define-cproc cairo-rel-move-to (cairo::<cairo> dx::<real> dy::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_rel_move_to cairo dx dy))
+
+(define-cproc cairo-rel-line-to (cairo::<cairo> dx::<real> dy::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_rel_line_to cairo dx dy))
+
+(define-cproc cairo-rel-curve-to (cairo::<cairo> 
+                                 x1::<real> y1::<real>
+                                 x2::<real> y2::<real>
+                                 x3::<real> y3::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_rel_curve_to cairo x1 y1 x2 y2 x3 y3))
+
+(define-cproc cairo-rectangle (cairo::<cairo> x::<real> y::<real>
+                                            width::<real> height::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_rectangle cairo x y width height))
+
+(define-cproc cairo-close-path (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_close_path cairo))
+
+;;;;;
+;;@return (values left top right bottom)
+(define-cproc cairo-path-extents (cairo::<cairo>) :: (<real> <real> <real> <real>)
+  (ENSURE_NOT_NULL cairo)
+  (let* ([x1::double]
+         [y1::double]
+         [x2::double]
+         [y2::double])
+    (cairo_path_extents cairo (& x1) (& y1) (& x2) (& y2))
+    (result x1 y1 x2 y2)))
+
+(define-cproc cairo-paint (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo-paint cairo))
+
+(define-cproc cairo-paint-width-alpha (cairo::<cairo> alpha::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_paint_with_alpha cairo alpha))
+
+(define-cproc cairo-mask (cairo::<cairo> pattern::<cairo-pattern>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (ENSURE_NOT_NULL pattern)
+  (cairo_mask cairo pattern))
+
+(define-cproc cairo-mask-surface (cairo::<cairo> surface::<cairo-surface> surface-x::<real> surface-y::<real>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (ENSURE_NOT_NULL surface)
+  (cairo_mask_surface cairo surface surface-x surface-y))
+
+(define-cproc cairo-stroke (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_stroke cairo))
+
+(define-cproc cairo-stroke-preserve (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_stroke_preserve cairo))
+
+(define-cproc cairo-fill (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_fill cairo))
+
+(define-cproc cairo-fill-preserve (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_fill_preserve cairo))
+
+(define-cproc cairo-copy-page (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_copy_page cairo))
+
+(define-cproc cairo-show-page (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_show_page cairo))
+
+;;
+;;Insideness testing
+(define-cproc cairo-in-stroke (cairo::<cairo> x::<real> y::<real>) :: <boolean>
+  (ENSURE_NOT_NULL cairo)
+  (result (cairo_in_stroke cairo x y)))
+
+(define-cproc cairo-in-fill (cairo::<cairo> x::<real> y::<real>) :: <boolean>
+  (ENSURE_NOT_NULL cairo)
+  (result (cairo_in_fill cairo x y)))
+
+;;
+;;Rectangular extents
+(define-cproc cairo-stroke-extents (cairo::<cairo>) :: (<real> <real> <real> <real>)
+  (ENSURE_NOT_NULL cairo)
+  (let* ([x1::double]
+         [y1::double]
+         [x2::double]
+         [y2::double])
+    (cairo_stroke_extents cairo (& x1) (& y1) (& x2) (& y2))
+    (result x1 y1 x2 y2)))
+
+(define-cproc cairo-fill-extents (cairo::<cairo>) :: (<real> <real> <real> <real>)
+  (ENSURE_NOT_NULL cairo)
+  (let* ([x1::double]
+         [y1::double]
+         [x2::double]
+         [y2::double])
+    (cairo_fill_extents cairo (& x1) (& y1) (& x2) (& y2))
+    (result x1 y1 x2 y2)))
+
+;;
+;;Clipping
+(define-cproc cairo-reset-clip (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_reset_clip cairo))
+
+(define-cproc cairo-clip (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_clip cairo))
+
+(define-cproc cairo-clip-preserve (cairo::<cairo>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_clip_preserve cairo))
+
+(define-cproc cairo-clip-extents (cairo::<cairo>) :: (<real> <real> <real> <real>)
+  (ENSURE_NOT_NULL cairo)
+  (let* ([x1::double]
+         [y1::double]
+         [x2::double]
+         [y2::double])
+    (cairo_clip_extents cairo (& x1) (& y1) (& x2) (& y2))
+    (result x1 y1 x2 y2)))
+
+(define-cclass <cairo-rectangle>
+  :built-in :struct
+  "Scmcairo_rectangle_t*" "Scm_cairo_rectangle_tClass"
+  ()
+  (
+   (x :type <real>)
+   (y :type <real>)
+   (width :type <real>)
+   (height :type <real>)
+   )
+  (printer #t)
+  (compare #t))
+
+(define-cproc cairo-copy-clip-rectangle-list (cairo::<cairo>) :: <list>
+  (ENSURE_NOT_NULL cairo)
+  (let* ([l::cairo_rectangle_list_t* (cairo_copy_clip_rectangle_list cairo)]
+         [c::ScmObj SCM_NIL])
+    (dotimes [i (@ l->num_rectangles)]
+      (set! c (Scm_Cons (boxing (aref (@ l->rectangles) (- (@ l->num_rectangles) i 1))
+                                <cairo-rectangle>)
+                        c)))
+
+    (cairo_rectangle_list_destroy l)
+    (result c)))
+
+
+;;
+;;Font/Text functions
+;;
+
+;;TODO accessor
+
+(define-cclass <cairo-glyph>
+  :built-in :struct
+  "Scmcairo_glyph_t*" "Scm_cairo_glyph_tClass"
+  ()
+  (
+   (index :type <uint>)
+   (x :type <real>)
+   (y :type <real>)
+   )
+  (printer #t)
+  (compare #t))
+
+(define-cproc cairo-glyph-allocate (num-glyphs::<fixnum>) :: <cairo-glyph-list>
+  (let* ([l::cairo_glyph_list_t* (SCM_NEW cairo_glyph_list_t)])
+    (set! (@ l->list) (cairo_glyph_allocate num-glyphs))
+    (set! (@ l->num) num-glyphs)
+    (result l)))
+
+(define-cproc cairo-glyph-free (glyphs::<cairo-glyph-list>) :: <void>
+  (when glyphs
+    (cairo_glyph_free (@ glyphs->list))
+    (set! (-> (SCM_FOREIGN_POINTER glyphs-scm) ptr) 0)))
+
+(define-cclass <cairo-text-cluster>
+  :built-in :struct
+  "Scmcairo_text_cluster_t*" "Scm_cairo_text_cluster_tClass"
+  ()
+  (
+   (num-bytes :type <int>
+              :c-name "num_bytes")
+   (num-glyphs :type <int>
+              :c-name "num_glyphs")
+   )
+  (printer #t)
+  (compare #t))
+
+(define-cproc cairo-text-cluster-allocate (num-clusters::<fixnum>) :: <cairo-text-cluster-list>
+  (let* ([l::cairo_text_cluster_list_t* (SCM_NEW cairo_text_cluster_list_t)])
+    (set! (@ l->list) (cairo_text_cluster_allocate num-clusters))
+    (set! (@ l->num) num-clusters)
+    (result l)))
+
+(define-cproc cairo-text-cluster-free (clusters::<cairo-text-cluster-list>) :: <void>
+  (when clusters
+    (cairo_text_cluster_free (@ clusters->list))
+    (set! (-> (SCM_FOREIGN_POINTER clusters-scm) ptr) 0)))
+
+;;cairo_text_cluster_flags_t
+(define-enum CAIRO_TEXT_CLUSTER_FLAG_BACKWARD)
+
+(define-cclass <cairo-text-extents>
+  :built-in :struct
+  "Scmcairo_text_extents_t*" "Scm_cairo_text_extents_tClass"
+  ()
+  (
+   (x-bearing :type <real>
+              :c-name "x_bearing")
+   (y-bearing :type <real>
+              :c-name "y_bearing")
+   (width :type <real>)
+   (height :type <real>)
+   (x-advance :type <real>
+              :c-name "x_advance")
+   (y-advance :type <real>
+              :c-name "y_advance")
+   )
+  (printer #t)
+  (compare #t))
+
+(define-cclass <cairo-font-extents>
+  :built-in :struct
+  "Scmcairo_font_extents_t*" "Scm_cairo_font_extents_tClass"
+  ()
+  (
+   (ascent :type <real>)
+   (descent :type <real>)
+   (height :type <real>)
+   (max-x-advance :type <real>
+                  :c-name "max_x_advance")
+   (max-y-advance :type <real>
+                  :c-name "max_y_advance")
+   )
+  (printer #t)
+  (compare #t))
+
+;;cairo_font_slant_t
+(define-enum CAIRO_FONT_SLANT_NORMAL)
+(define-enum CAIRO_FONT_SLANT_ITALIC)
+(define-enum CAIRO_FONT_SLANT_OBLIQUE)
+
+;;cairo_font_weight_t
+(define-enum CAIRO_FONT_WEIGHT_NORMAL)
+(define-enum CAIRO_FONT_WEIGHT_BOLD)
+
+;;cairo_subpixel_order_t
+(define-enum CAIRO_SUBPIXEL_ORDER_DEFAULT)
+(define-enum CAIRO_SUBPIXEL_ORDER_RGB)
+(define-enum CAIRO_SUBPIXEL_ORDER_BGR)
+(define-enum CAIRO_SUBPIXEL_ORDER_VRGB)
+(define-enum CAIRO_SUBPIXEL_ORDER_VBGR)
+
+(define-enum CAIRO_HINT_STYLE_DEFAULT)
+(define-enum CAIRO_HINT_STYLE_NONE)
+(define-enum CAIRO_HINT_STYLE_SLIGHT)
+(define-enum CAIRO_HINT_STYLE_MEDIUM)
+(define-enum CAIRO_HINT_STYLE_FULL)
+
+;;cairo_hint_metrics_t
+(define-enum CAIRO_HINT_METRICS_DEFAULT)
+(define-enum CAIRO_HINT_METRICS_OFF)
+(define-enum CAIRO_HINT_METRICS_ON)
+
+(define-cproc cairo-font-options-create () :: <cairo-font-options>
+  (result (cairo_font_options_create)))
+
+(define-cproc cairo-font-options-copy (original::<cairo-font-options>) :: <cairo-font-options>
+  (ENSURE_NOT_NULL original)
+  (result (cairo_font_options_copy original)))
+
+(define-cproc cairo-font-options-destroy (options::<cairo-font-options>) :: <void>
+  (when options
+    (cairo_font_options_destroy options)
+    (set! (-> (SCM_FOREIGN_POINTER options-scm) ptr) 0)))
+
+(define-cproc cairo-font-options-status (options::<cairo-font-options>) :: <fixnum>
+  (ENSURE_NOT_NULL options)
+  (result (cairo_font_options_status options)))
+
+(define-cproc cairo-font-options-merge (options::<cairo-font-options> other::<cairo-font-options>) :: <void>
+  (ENSURE_NOT_NULL options)
+  (ENSURE_NOT_NULL other)
+  (cairo_font_options_merge options other))
+
+(define-cproc cairo-font-options-equal (options::<cairo-font-options> other::<cairo-font-options>) :: <boolean>
+  (ENSURE_NOT_NULL options)
+  (ENSURE_NOT_NULL other)
+  (result (cairo_font_options_equal options other)))
+
+(define-cproc cairo-font-options-hash (options::<cairo-font-options>) :: <uint>
+  (ENSURE_NOT_NULL options)
+  (result (cairo_font_options_hash options)))
+
+(define-cproc cairo-font-options-set-antialias (options::<cairo-font-options> antialias::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL options)
+  (cairo_font_options_set_antialias options (cast cairo_antialias_t antialias)))
+
+(define-cproc cairo-font-options-get-antialias (options::<cairo-font-options>) :: <fixnum>
+  (ENSURE_NOT_NULL options)
+  (result (cast int (cairo_font_options_get_antialias options))))
+
+(define-cproc cairo-font-options-set-subpixel-order (options::<cairo-font-options> subpixel-order::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL options)
+  (cairo_font_options_set_subpixel_order options (cast cairo_subpixel_order_t  subpixel-order)))
+
+(define-cproc cairo-font-options-get-subpixel-order (options::<cairo-font-options>) :: <fixnum>
+  (ENSURE_NOT_NULL options)
+  (result (cast int (cairo_font_options_get_subpixel_order options))))
+
+(define-cproc cairo-font-options-set-hint-style (options::<cairo-font-options> hint-style::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL options)
+  (cairo_font_options_set_hint_style options (cast cairo_hint_style_t hint-style)))
+
+(define-cproc cairo-font-options-get-hint-style (options::<cairo-font-options>) :: <fixnum>
+  (ENSURE_NOT_NULL options)
+  (result (cast int (cairo_font_options_get_hint_style options))))
+
+(define-cproc cairo-font-options-set-hint-metrics (options::<cairo-font-options> hint-metrics::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL options)
+  (cairo_font_options_set_hint_metrics options (cast cairo_hint_metrics_t  hint-metrics)))
+
+(define-cproc cairo-font-options-get-hint-metrics (options::<cairo-font-options>) :: <fixnum>
+  (ENSURE_NOT_NULL options)
+  (result (cast int (cairo_font_options_get_hint_metrics options))))
+
+
+;; This interface is for dealing with text as text, not caring about the
+;;   font object inside the the cairo_t.
+
+;;;;;
+;;@param slant {@
+;; CAIRO_FONT_SLANT_NORMAL
+;; CAIRO_FONT_SLANT_ITALIC
+;; CAIRO_FONT_SLANT_OBLIQUE
+;;}
+;;@param weight {@
+;; CAIRO_FONT_WEIGHT_NORMAL
+;; CAIRO_FONT_WEIGHT_BOLD
+;;}
+(define-cproc cairo-select-font-face (cairo::<cairo> family::<const-cstring> slant::<fixnum> weight::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_select_font_face cairo family
+                          (cast cairo_font_slant_t slant)
+                          (cast cairo_font_weight_t weight)))
+
+(define-cproc cairo-set-font-size (cairo::<cairo> size::<double>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_font_size cairo size))
+
+(define-cproc cairo-set-font-matrix (cairo::<cairo> matrix::<cairo-matrix>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo-set-font-matrix cairo (& matrix)))
+
+(define-cproc cairo-get-font-matrix (cairo::<cairo>) :: <cairo-matrix>
+  (ENSURE_NOT_NULL cairo)
+  (let* ([matrix::cairo_matrix_t])
+    (cairo_get_font_matrix cairo (& matrix))
+    (result matrix)))
+
+(define-cproc cairo-set-font-options (cairo::<cairo> options::<cairo-font-options>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo-set-font-options cairo options))
+
+(define-cproc cairo-get-font-options (cairo::<cairo> :optional options) :: <top>
+  (ENSURE_NOT_NULL cairo)
+  (let* ([options-ptr::cairo_font_options_t*])
+    (cond
+      [(unbound? options)
+       (set! options-ptr (cairo_font_options_create))]
+      [(is-type? options <cairo-font-options>)
+       (set! options-ptr (unboxing options <cairo-font-options>))
+       (ENSURE_NOT_NULL options-ptr)]
+      [else (Scm_Error "options requred are #undef or <cairo-font-options>, but got %S" options)])
+    (cairo_get_font_options cairo options-ptr)
+    (result (?: (unbound? options)
+                (boxing options-ptr <cairo-font-options>)
+                options))))
+
+(define-cproc cairo-set-font-face (cairo::<cairo> font-face::<cairo-font-face>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (ENSURE_NOT_NULL font-face)
+  (cairo_set_font_face cairo font-face))
+
+(define-cproc cairo-get-font-face (cairo::<cairo>) :: <cairo-font-face>
+  (ENSURE_NOT_NULL cairo)
+  (result (cairo_get_font_face cairo)))
+
+(define-cproc cairo-set-scaled-font (cairo::<cairo> scaled-font::<cairo-scaled-font>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_set_scaled_font cairo scaled-font))
+
+(define-cproc cairo-get-scaled-font (cairo::<cairo>) :: <cairo-scaled-font>
+  (ENSURE_NOT_NULL cairo)
+  (result (cairo_get_scaled_font cairo)))
+
+(define-cproc cairo-show-text (cairo::<cairo> text::<const-cstring>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_show_text cairo text))
+
+(define-cproc cairo-show-glyphs (cairo::<cairo> glyphs::<cairo-glyph-list> :optional num-glyphs) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (let* ([num::int])
+    (cond
+      [(unbound? num-glyphs)
+       (set! num (@ glyphs->num))]
+      [(is-type? num-glyphs <int>)
+       (set! num (unboxing num-glyphs <int>))]
+      [else (Scm_Error "num-glyphs required integer number or #undef, but got %S" num-glyphs)])
+    (cairo_show_glyphs cairo (@ glyphs->list) num)))
+
+;;;;;
+;;@param text-len {@ bytes -1}
+;;@param num-glyphs {@ num -1}
+;;@param num-clusters {@ num -1}
+;;@param cluster-flags {@
+;; CAIRO_TEXT_CLUSTER_FLAG_BACKWARD
+;;}
+(define-cproc cairo-show-text-glyphs (cairo::<cairo> text::<const-cstring> text-len::<fixnum>
+                                                     glyphs::<cairo-glyph-list> num-glyphs::<fixnum>
+                                                     clusters::<cairo-text-cluster-list> num-clusters::<fixnum>
+                                                     cluster-flags::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (let* ([num-g::int]
+         [num-c::int])
+    (if (> 0 num-glyphs)
+       (set! num-g (@ glyphs->num))
+       (set! num-g num-glyphs))
+    (if (> 0 num-clusters)
+       (set! num-c (@ clusters->num))
+       (set! num-c num-clusters))
+    (cairo_show_text_glyphs cairo text text-len 
+                            (@ glyphs->list) num-g
+                            (@ clusters->list) num-c
+                            (cast cairo_text_cluster_flags_t cluster-flags))))
+
+(define-cproc cairo-text-path (cairo::<cairo> text::<const-cstring>) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (cairo_text_path cairo text))
+
+(define-cproc cairo-glyphs-path (cairo::<cairo> glyphs::<cairo-glyph-list> :optional num-glyphs) :: <void>
+  (ENSURE_NOT_NULL cairo)
+  (let* ([num::int])
+    (cond
+      [(unbound? num-glyphs)
+       (set! num (@ glyphs->num))]
+      [(is-type? num-glyphs <int>)
+       (set! num (unboxing num-glyphs <int>))]
+      [else (Scm_Error "num-glyphs required integer number or #undef, but got %S" num-glyphs)])
+    (cairo_glyph_path cairo (@ glyphs->list) num)))
+
+(define-cproc cairo-text-extents (cairo::<cairo> text::<const-cstring>) :: <cairo-text-extents>
+  (ENSURE_NOT_NULL cairo)
+  (let* ([extents::cairo_text_extents_t])
+    (cairo_text_extents cairo text (& extents))
+    (result extents)))
+
+(define-cproc cairo-glyphs-extents (cairo::<cairo> glyphs::<cairo-glyph-list> :optional num-glyphs) :: <cairo-text-extents>
+  (ENSURE_NOT_NULL cairo)
+  (let* ([num::int]
+         [extents::cairo_text_extents_t])
+    (cond
+      [(unbound? num-glyphs)
+       (set! num (@ glyphs->num))]
+      [(is-type? num-glyphs <int>)
+       (set! num (unboxing num-glyphs <int>))]
+      [else (Scm_Error "num-glyphs required integer number or #undef, but got %S" num-glyphs)])
+    (cairo_glyph_extents cairo (@ glyphs->list) num (& extents))
+    (result extents)))
+
+(define-cproc cairo-font-extents (cairo::<cairo>) :: <cairo-font-extents>
+  (ENSURE_NOT_NULL cairo)
+  (let* ([extents::cairo_font_extents_t])
+    (cairo_font_extents cairo (& extents))
+    (result extents)))
+
+;;cairo_font_type_t
+(define-enum CAIRO_FONT_TYPE_TOY)
+(define-enum CAIRO_FONT_TYPE_FT)
+(define-enum CAIRO_FONT_TYPE_WIN32)
+(define-enum CAIRO_FONT_TYPE_QUARTZ)
+(define-enum CAIRO_FONT_TYPE_USER)
+
+(define-cproc cairo-font-face-get-type (font-face::<cairo-font-face>) :: <fixnum>
+  (ENSURE_NOT_NULL font-face)
+  (result (cast int (cairo_font_face_get_type font-face))))
+
+;;
+;;Portable interface to general font features.
+
+(define-cproc cairo-scaled-font-create (font-face::<cairo-font-face>
+                                         font-matrix::<cairo-matrix>
+                                         ctm::<cairo-matrix>
+                                         options::<cairo-font-options>) :: <cairo-scaled-font>
+  (ENSURE_NOT_NULL font-face)
+  (ENSURE_NOT_NULL options)
+  (result (cairo_scaled_font_create font-face (& font-matrix) (& ctm) options)))
+
+(define-cproc cairo-scaled-font-reference (scaled-font::<cairo-scaled-font>) :: <cairo-scaled-font>
+  (ENSURE_NOT_NULL scaled-font)
+  (result (cairo_scaled_font_reference scaled-font)))
+
+(define-cproc cairo-scaled-font-destroy (scaled-font::<cairo-scaled-font>) :: <void>
+  (when scaled-font
+    (cairo_scaled_font_destroy scaled-font)
+    (set! (-> (SCM_FOREIGN_POINTER scaled-font-scm) ptr) 0)))
+
+(define-cproc cairo-scaled-font-get-reference-count (scaled-font::<cairo-scaled-font>) :: <uint>
+  (ENSURE_NOT_NULL scaled-font)
+  (result (cairo_scaled_font_get_reference_count scaled-font)))
+
+(define-cproc cairo-scaled-font-status (scaled-font::<cairo-scaled-font>) :: <fixnum>
+  (ENSURE_NOT_NULL scaled-font)
+  (result (cast int (cairo_scaled_font_status scaled-font))))
+
+(define-cproc cairo-scaled-font-get-type (scaled-font::<cairo-scaled-font>) :: <fixnum>
+  (ENSURE_NOT_NULL scaled-font)
+  (result (cast int (cairo_scaled_font_get_type scaled-font))))
+
+(define-cproc cairo-scaled-font-extents (scaled-font::<cairo-scaled-font>) :: <cairo-font-extents>
+  (ENSURE_NOT_NULL scaled-font)
+  (let* ([extents::cairo_font_extents_t])
+    (cairo_scaled_font_extents scaled-font (& extents))
+    (result extents)))
+
+(define-cproc cairo-scaled-font-text-extents (scaled-font::<cairo-scaled-font> text::<const-cstring>) :: <cairo-text-extents>
+  (ENSURE_NOT_NULL scaled-font)
+  (let* ([extents::cairo_text_extents_t])
+    (cairo_scaled_font_text_extents scaled-font text (& extents))
+    (result extents)))
+
+(define-cproc cairo-scaled-font-glyph-extents (scaled-font::<cairo-scaled-font>
+                                                glyphs::<cairo-glyph-list> :optional num-glyphs) :: <cairo-text-extents>
+  (ENSURE_NOT_NULL scaled-font)
+  (let* ([num::int]
+         [extents::cairo_text_extents_t])
+    (cond
+      [(unbound? num-glyphs)
+       (set! num (@ glyphs->num))]
+      [(is-type? num-glyphs <int>)
+       (set! num (unboxing num-glyphs <int>))]
+      [else (Scm_Error "num-glyphs required integer number or #undef, but got %S" num-glyphs)])
+    (cairo_scaled_font_glyph_extents scaled-font (@ glyphs->list) num (& extents))
+    (result extents)))
+
+;;;;;
+;;@param text-len {@ text-length -1}
+(define-cproc cairo-scaled-font-text-to-glyphs (scaled-font::<cairo-scaled-font> 
+                                                 x::<real> y::<real>
+                                                 text::<const-cstring> text-len::<fixnum>)
+  :: (<fixnum> <cairo-glyph-list> <cairo-text-cluster-list> <fixnum>)
+  (ENSURE_NOT_NULL scaled-font)
+  (let* ([glyphs::cairo_glyph_t* NULL]
+         [num-g::int]
+         [list-g::cairo_glyph_list_t* (SCM_NEW cairo_glyph_list_t)]
+         [clusters::cairo_text_cluster_t* NULL]
+         [num-c::int]
+         [list-c::cairo_text_cluster_list_t* (SCM_NEW cairo_text_cluster_list_t)]
+         [flags::cairo_text_cluster_flags_t]
+         [ret::cairo_status_t (cairo_scaled_font_text_to_glyphs
+                                scaled-font x y text text-len
+                                (& glyphs) (& num-g) 
+                                (& clusters) (& num-c) (& flags))])
+    (set! (@ list-g->list) glyphs)
+    (set! (@ list-g->num) num-g)
+    (set! (@ list-c->list) clusters)
+    (set! (@ list-c->num) num-c)
+    (result (cast int ret)
+            list-g list-c
+            (cast int flags))))
+
+(define-cproc cairo-scaled-font-get-font-face (scaled-font::<cairo-scaled-font>) :: <cairo-font-face>
+  (ENSURE_NOT_NULL scaled-font)
+  (result (cairo_scaled_font_get_font_face scaled-font)))
+
+(define-cproc cairo-scaled-font-get-font-matrix (scaled-font::<cairo-scaled-font>) :: <cairo-matrix>
+  (ENSURE_NOT_NULL scaled-font)
+  (let* ([matrix::cairo_matrix_t]) 
+    (cairo_scaled_font_get_font_matrix scaled-font (& matrix))
+    (result matrix)))
+
+(define-cproc cairo-scaled-font-get-ctm (scaled-font::<cairo-scaled-font>) :: <cairo-matrix>
+  (ENSURE_NOT_NULL scaled-font)
+  (let* ([matrix::cairo_matrix_t]) 
+    (cairo_scaled_font_get_ctm scaled-font (& matrix))
+    (result matrix)))
+
+(define-cproc cairo-scaled-font-get-scale-matrix (scaled-font::<cairo-scaled-font>) :: <cairo-matrix>
+  (ENSURE_NOT_NULL scaled-font)
+  (let* ([matrix::cairo_matrix_t]) 
+    (cairo_scaled_font_get_scale_matrix scaled-font (& matrix))
+    (result matrix)))
+
+(define-cproc cairo-scaled-font-get-font-options (scaled-font::<cairo-scaled-font> :optional options) :: <top>
+  (ENSURE_NOT_NULL scaled-font)
+  (let* ([options-ptr::cairo_font_options_t*])
+    (cond
+      [(unbound? options)
+       (set! options-ptr (cairo_font_options_create))]
+      [(is-type? options <cairo-font-options>)
+       (set! options-ptr (unboxing options <cairo-font-options>))
+       (ENSURE_NOT_NULL options-ptr)]
+      [else (Scm_Error "options requred are #undef or <cairo-font-options>, but got %S" options)])
+    (cairo_scaled_font_get_font_options scaled-font options-ptr)
+    (result (?: (unbound? options)
+                (boxing options-ptr <cairo-font-options>)
+                options))))
+
+;;
+;; Toy fonts
+;;
+
+;;;;;
+;;@param slant {@
+;; CAIRO_FONT_SLANT_NORMAL
+;; CAIRO_FONT_SLANT_ITALIC
+;; CAIRO_FONT_SLANT_OBLIQUE
+;;}
+;;@param weight {@
+;; CAIRO_FONT_WEIGHT_NORAL
+;; CAIRO_FONT_WEIGHT_BOLD
+;;}
+(define-cproc cairo-toy-font-face-create (family::<const-cstring> slant::<fixnum> weight::<fixnum>) :: <cairo-font-face>
+  (result (cairo_toy_font_face_create family 
+                                      (cast cairo_font_slant_t slant)
+                                      (cast cairo_font_weight_t weight))))
+
+(define-cproc cairo-toy-font-face-get-family (font-face::<cairo-font-face>) :: <const-cstring>
+  (ENSURE_NOT_NULL font-face)
+  (result (cairo_toy_font_face_get_family font-face)))
+
+(define-cproc cairo-toy-font-face-get-slant (font-face::<cairo-font-face>) :: <fixnum>
+  (ENSURE_NOT_NULL font-face)
+  (result (cast int (cairo_toy_font_face_get_slant font-face))))
+
+(define-cproc cairo-toy-font-face-get-weight (font-face::<cairo-font-face>) :: <fixnum>
+  (ENSURE_NOT_NULL font-face)
+  (result (cast int (cairo_toy_font_face_get_weight font-face))))
+
+;;
+;;Portable interface to general font features.
+
+;;
+;;Generic identifier for a font style
+;;
+
+(define-cproc cairo-font-face-reference (font-face::<cairo-font-face>) :: <cairo-font-face>
+  (ENSURE_NOT_NULL font-face)
+  (result (cairo_font_face_reference font-face)))
+
+(define-cproc cairo-font-face-destroy (font-face::<cairo-font-face>) :: <void>
+  (when font-face
+    (cairo_font_face_destroy font-face)
+    (set! (-> (SCM_FOREIGN_POINTER font-face-scm) ptr) 0)))
+
+(define-cproc cairo-font-face-get-reference-count (font-face::<cairo-font-face>) :: <uint>
+  (ENSURE_NOT_NULL font-face)
+  (result (cairo_font_face_get_reference_count font-face)))
+
+(define-cproc cairo-font-face-status (font-face::<cairo-font-face>) :: <fixnum>
+  (ENSURE_NOT_NULL font-face)
+  (result (cast int (cairo_font_face_status font-face))))
+
+
+;;;;;
+(define-cproc cairo-surface-create-similar (other::<cairo-surface> content::<fixnum> width::<fixnum> height::<fixnum>) ::<cairo-surface>
+  (ENSURE_NOT_NULL other)
+  (result (cairo_surface_create_similar other (cast cairo_content_t content) width height)))
+
+(define-cproc cairo-surface-reference (surface::<cairo-surface>) :: <cairo-surface>
+  (ENSURE_NOT_NULL surface)
+  (result (cairo_surface_reference surface)))
+
+(define-cproc cairo-surface-finish (surface::<cairo-surface>) :: <cairo-surface>
+  (when surface
+    (cairo_surface_finish surface)
+    (set! (-> (SCM_FOREIGN_POINTER surface-scm) ptr) 0)))
+
+(define-cproc cairo-surface-destroy (surface::<cairo-surface>) :: <cairo-surface>
+  (when surface
+    (cairo_surface_destroy surface)
+    (set! (-> (SCM_FOREIGN_POINTER surface-scm) ptr) 0)))
+
+;;cairo_surface_type_t
+(define-enum CAIRO_SURFACE_TYPE_IMAGE)
+(define-enum CAIRO_SURFACE_TYPE_PDF)
+(define-enum CAIRO_SURFACE_TYPE_PS)
+(define-enum CAIRO_SURFACE_TYPE_XLIB)
+(define-enum CAIRO_SURFACE_TYPE_XCB)
+(define-enum CAIRO_SURFACE_TYPE_GLITZ)
+(define-enum CAIRO_SURFACE_TYPE_QUARTZ)
+(define-enum CAIRO_SURFACE_TYPE_WIN32)
+(define-enum CAIRO_SURFACE_TYPE_BEOS)
+(define-enum CAIRO_SURFACE_TYPE_DIRECTFB)
+(define-enum CAIRO_SURFACE_TYPE_SVG)
+(define-enum CAIRO_SURFACE_TYPE_OS2)
+(define-enum CAIRO_SURFACE_TYPE_WIN32_PRINTING)
+(define-enum CAIRO_SURFACE_TYPE_QUARTZ_IMAGE)
+
+(define-cproc cairo-surface-get-type (surface::<cairo-surface>) :: <fixnum>
+  (ENSURE_NOT_NULL surface)
+  (result (cast int (cairo_surface_get_type surface))))
+
+(define-cproc cairo-surface-get-content (surface::<cairo-surface>) :: <fixnum>
+  (ENSURE_NOT_NULL surface)
+  (result (cast int (cairo_surface_get_content surface))))
+
+"#if CAIRO_HAS_PNG_FUNCTIONS"
+(define-cproc cairo-surface_write-to-png (surface::<cairo-surface> filename::<const-cstring>) :: <fixnum>
+  (ENSURE_NOT_NULL surface)
+  (result (cast int (cairo_surface_write_to_png surface filename))))
+"#endif"
+
+;;TODO cairo_surface_get_font_options
+
+(define-cproc cairo-surface-flush (surface::<cairo-surface>) :: <void>
+  (ENSURE_NOT_NULL surface)
+  (cairo_surface_flush surface))
+
+(define-cproc cairo-surface-mark-dirty (surface::<cairo-surface>) :: <void>
+  (ENSURE_NOT_NULL surface)
+  (cairo_surface_mark_dirty surface))
+
+(define-cproc cairo-surface-mark-dirty-rectangle (surface::<cairo-surface> x::<fixnum> y::<fixnum> width::<fixnum> height::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL surface)
+  (cairo_surface_mark_dirty_rectangle surface x y width height))
+
+(define-cproc cairo-surface-set-device-offset (surface::<cairo-surface> x-offset::<real> y-offset::<real>) :: <void>
+  (ENSURE_NOT_NULL surface)
+  (cairo_surface_set_device_offset surface x-offset y-offset))
+
+;;;;;
+;;@return (values x-offset y-offset)
+(define-cproc cairo-surface-get-device-offset (surface::<cairo-surface>) :: (<real> <real>) 
+  (ENSURE_NOT_NULL surface)
+  (let* ([x::double]
+         [y::double])
+    (cairo_surface_get_device_offset surface (& x) (& y))
+    (result x y)))
+
+(define-cproc cairo-surface-set-fallback-resolution (surface::<cairo-surface> x-pixels/inch::<real> y-pixels/inch::<real>) :: <void>
+  (ENSURE_NOT_NULL surface)
+  (cairo_surface_set_fallback_resolution surface x-pixels/inch y-pixels/inch))
+
+;;;;;
+;;@return (values x-pixels/inch y-pixels/inch)
+(define-cproc cairo-surface-get-fallback-resolution (surface::<cairo-surface>) :: (<real> <real>)
+  (ENSURE_NOT_NULL surface)
+  (let* ([x::double]
+         [y::double])
+    (cairo_surface_get_fallback_resolution surface (& x) (& y))
+    (result x y)))
+
+(define-cproc cairo-surface-copy-page (surface::<cairo-surface>) :: <void>
+  (ENSURE_NOT_NULL surface)
+  (cairo_surface_copy_page surface))
+
+(define-cproc cairo-surface-show-page (surface::<cairo-surface>) :: <void>
+  (ENSURE_NOT_NULL surface)
+  (cairo_surface_show_page surface))
+
+(define-cproc cairo-surface-has-show-text-glyphs (surface::<cairo-surface>) :: <boolean>
+  (ENSURE_NOT_NULL surface)
+  (cairo_surface_has_show_text_glyphs surface))
+
+
+;;
+;; Image-surface functions 
+;;
+
+;;cairo_format_t
+(define-enum CAIRO_FORMAT_ARGB32)
+(define-enum CAIRO_FORMAT_A8)
+(define-enum CAIRO_FORMAT_A1)
+
+;;;;;
+;;@param format {@ CAIRO_FORMAT_ARGB32 CAIRO_FORMAT_A8 CAIRO_FORMAT_A1}
+(define-cproc cairo-image-surface-create (format::<fixnum> width::<fixnum> height::<fixnum>) :: <cairo-surface>
+  (result (cairo_image_surface_create (cast cairo_format_t format) width height)))
+
+;;;;;
+;;@param format {@ CAIRO_FORMAT_ARGB32 CAIRO_FORMAT_A8 CAIRO_FORMAT_A1}
+(define-cproc cairo-format-stride-for-width (format::<fixnum> width::<fixnum>) :: <fixnum>
+  (result (cairo_format_stride_for_width (cast cairo_format_t format) width)))
+
+;;;;;
+;;@param format {@ CAIRO_FORMAT_ARGB32 CAIRO_FORMAT_A8 CAIRO_FORMAT_A1}
+(define-cproc cairo-image-surface-create-for-data (data format::<fixnum>
+                                                 width::<fixnum> height::<fixnum> stride::<fixnum>) :: <cairo-surface>
+  (let* ([buf::(unsigned char*)])
+    (.if HAVE_LIBNNVECTOR
+         (cond
+           [(is-type? data <nnvector>)
+            (set! buf (ref (unboxing data <nnvector>) buf))]
+           [(is-type? data <uvector>)
+            (set! buf (SCM_U8VECTOR_ELEMENTS data))]
+           [else (Scm_Error "data required <uvector> or <nnvector>, but got %S" data)])
+         (cond
+           [(is-type? data <uvector>)
+            (set! buf (SCM_U8VECTOR_ELEMENTS data))]
+           [else (Scm_Error "data required <uvector>, but got %S" data)]))
+    (result (cairo_image_surface_create_for_data
+              buf
+              (cast cairo_format_t format)
+              width height stride))))
+
+(define-cproc cairo-image-surface-get-data (surface::<cairo-surface>) :: <top>
+  (ENSURE_NOT_NULL surface)
+  (result (Scm_MakeU8VectorFromArrayShared
+            (cairo_image_surface_get_stride surface)
+            (cairo_image_surface_get_data surface))))
+
+(define-cproc cairo-image-surface-get-width (surface::<cairo-surface>) :: <fixnum>
+  (ENSURE_NOT_NULL surface)
+  (result (cairo_image_surface_get_width surface)))
+
+(define-cproc cairo-image-surface-get-height (surface::<cairo-surface>) :: <fixnum>
+  (ENSURE_NOT_NULL surface)
+  (result (cairo_image_surface_get_height surface)))
+
+(define-cproc cairo-image-surface-get-stride (surface::<cairo-surface>) :: <fixnum>
+  (ENSURE_NOT_NULL surface)
+  (result (cairo_image_surface_get_stride surface)))
+
+"#if CAIRO_HAS_PNG_FUNCTIONS"
+(define-cproc cairo-image-surface-create-from-png (filename::<const-cstring>) :: <cairo-surface>
+  (result (cairo_image_surface_create_from_png filename)))
+"#endif"
+
+;;
+;;Pattern creation functions
+;;
+
+(define-cproc cairo-pattern-create-rgb (red::<real> green::<real> blue::<real>) :: <cairo-pattern>
+  (result (cairo_pattern_create_rgb red green blue)))
+
+(define-cproc cairo-pattern-create-rgba (red::<real> green::<real> blue::<real> alpha::<real>) :: <cairo-pattern>
+  (result (cairo_pattern_create_rgba red green blue alpha)))
+
+(define-cproc cairo-pattern-create-for-surface (surface::<cairo-surface>) :: <cairo-pattern>
+  (ENSURE_NOT_NULL surface)
+  (result (cairo_pattern_create_for_surface surface)))
+
+(define-cproc cairo-pattern-create-linear (x0::<real> y0::<real> x1::<real> y1::<real>) :: <cairo-pattern>
+  (result (cairo_pattern_create_linear x0 y0 x1 y1)))
+
+(define-cproc cairo-pattern-create-radial (x0::<real> y0::<real> radius0::<real> x1::<real> y1::<real> radius1::<real>) :: <cairo-pattern>
+  (result (cairo_pattern_create_radial x0 y0 radius0 x1 y1 radius1)))
+
+(define-cproc cairo-pattern_reference (pattern::<cairo-pattern>) :: <cairo-pattern>
+  (ENSURE_NOT_NULL pattern)
+  (result (cairo_pattern_reference pattern)))
+
+(define-cproc cairo-pattern-destroy (pattern::<cairo-pattern>) :: <void>
+  (when pattern
+    (cairo_pattern_destroy pattern)
+    (set! (-> (SCM_FOREIGN_POINTER pattern-scm) ptr) 0)))
+
+(define-cproc cairo-pattern-get-reference-count (pattern::<cairo-pattern>) :: <uint>
+  (ENSURE_NOT_NULL pattern)
+  (result (cairo_pattern_get_reference_count pattern)))
+
+(define-cproc cairo-pattern_status (pattern::<cairo-pattern>) :: <fixnum>
+  (ENSURE_NOT_NULL pattern)
+  (result (cairo_pattern_status pattern)))
+
+;;cairo_pattern_type_t
+(define-enum CAIRO_PATTERN_TYPE_SOLID)
+(define-enum CAIRO_PATTERN_TYPE_SURFACE)
+(define-enum CAIRO_PATTERN_TYPE_LINEAR)
+(define-enum CAIRO_PATTERN_TYPE_RADIAL)
+
+;;;;;
+;;@return cairo_pattern_type_t
+(define-cproc cairo-pattern-get-type (pattern::<cairo-pattern>) :: <fixnum>
+  (ENSURE_NOT_NULL pattern)
+  (result (cast int (cairo_pattern_get_type pattern))))
+
+(define-cproc cairo-pattern-add-color-stop-rgb (pattern::<cairo-pattern>
+                                                 offset::<real>
+                                                 red::<real> green::<real> blue::<real>) :: <void>
+  (ENSURE_NOT_NULL pattern)
+  (cairo_pattern_add_color_stop_rgb pattern offset red green blue))
+
+(define-cproc cairo-pattern-add-color-stop-rgba (pattern::<cairo-pattern>
+                                                  offset::<real>
+                                                  red::<real> green::<real> blue::<real>
+                                                  alpha::<real>) :: <void>
+  (ENSURE_NOT_NULL pattern)
+  (cairo_pattern_add_color_stop_rgba pattern offset red green blue alpha))
+
+(define-cproc cairo-pattern-set-matrix (pattern::<cairo-pattern> matrix::<cairo-matrix>) :: <void>
+  (ENSURE_NOT_NULL pattern)
+  (cairo_pattern_set_matrix pattern (& matrix)))
+
+(define-cproc cairo-pattern-get-matrix (pattern::<cairo-pattern>) :: <cairo-matrix>
+  (ENSURE_NOT_NULL pattern)
+  (let* ([matrix::cairo_matrix_t])
+    (cairo_pattern_get_matrix pattern (& matrix))
+    (result matrix)))
+
+
+(define-enum CAIRO_OPERATOR_CLEAR)
+
+(define-enum CAIRO_OPERATOR_SOURCE)
+(define-enum CAIRO_OPERATOR_OVER)
+(define-enum CAIRO_OPERATOR_IN)
+(define-enum CAIRO_OPERATOR_OUT)
+(define-enum CAIRO_OPERATOR_ATOP)
+
+(define-enum CAIRO_OPERATOR_DEST)
+(define-enum CAIRO_OPERATOR_DEST_OVER)
+(define-enum CAIRO_OPERATOR_DEST_IN)
+(define-enum CAIRO_OPERATOR_DEST_OUT)
+(define-enum CAIRO_OPERATOR_DEST_ATOP)
+
+(define-enum CAIRO_OPERATOR_XOR)
+(define-enum CAIRO_OPERATOR_ADD)
+(define-enum CAIRO_OPERATOR_SATURATE)
+
+;;cairo_extend_t
+(define-enum CAIRO_EXTEND_NONE)
+(define-enum CAIRO_EXTEND_REPEAT)
+(define-enum CAIRO_EXTEND_REFLECT)
+(define-enum CAIRO_EXTEND_PAD)
+
+;;;;;
+;;@param extend {@
+;; CAIRO_EXTEND_NONE
+;; CAIRO_EXTEND_REPEAT
+;; CAIRO_EXTEND_REFLECT
+;; CAIRO_EXTEND_PAD
+;;}
+(define-cproc cairo-pattern-set-extend (pattern::<cairo-pattern> extend::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL pattern)
+  (cairo_pattern_set_extend pattern (cast cairo_extend_t extend)))
+
+(define-cproc cairo-pattern-get-extend (pattern::<cairo-pattern>) :: <fixnum>
+  (ENSURE_NOT_NULL pattern)
+  (result (cast int (cairo_pattern_get_extend pattern))))
+
+(define-enum CAIRO_FILTER_FAST)
+(define-enum CAIRO_FILTER_GOOD)
+(define-enum CAIRO_FILTER_BEST)
+(define-enum CAIRO_FILTER_NEAREST)
+(define-enum CAIRO_FILTER_BILINEAR)
+(define-enum CAIRO_FILTER_GAUSSIAN)
+
+;;;;;
+;;@param filter {@
+;; CAIRO_FILTER_FAST
+;; CAIRO_FILTER_GOOD
+;; CAIRO_FILTER_BEST
+;; CAIRO_FILTER_NEAREST
+;; CAIRO_FILTER_BILINEAR
+;; CAIRO_FILTER_GAUSSIAN
+;;}
+(define-cproc cairo-pattern-set-filter (pattern::<cairo-pattern> filter::<fixnum>) :: <void>
+  (ENSURE_NOT_NULL pattern)
+  (cairo_pattern_set_filter pattern filter))
+
+(define-cproc cairo-pattern-get-filter (pattern::<cairo-pattern>) :: <fixnum>
+  (ENSURE_NOT_NULL pattern)
+  (result (cast int (cairo_pattern_get_filter pattern))))
+
+;;;;;
+;;@return (values r g b a)
+(define-cproc cairo-pattern-get-rgba (pattern::<cairo-pattern>) :: (<real> <real> <real> <real>)
+  (ENSURE_NOT_NULL pattern)
+  (let* ([r::double]
+         [g::double]
+         [b::double]
+         [a::double])
+    (cairo-pattern-get-rgba pattern (& r) (& g) (& b) (& a))
+    (result r g b a)))
+
+(define-cproc cairo-pattern-get-surface (pattern::<cairo-pattern>) :: <cairo-surface>
+  (ENSURE_NOT_NULL pattern)
+  (let* ([surface::cairo_surface_t*])
+    (cairo-pattern-get-surface pattern (& surface))
+    (result surface)))
+
+(define-cproc cairo-pattern-get-color-stop-rgba (pattern::<cairo-pattern> index::<fixnum>)
+  :: (<real> <real> <real> <real> <real>)
+  (ENSURE_NOT_NULL pattern)
+  (let* ([offset::double]
+         [r::double]
+         [g::double]
+         [b::double]
+         [a::double])
+    (cairo_pattern_get_color_stop_rgba 
+      pattern index
+      (& offset) (& r) (& g) (& b) (& a))
+    (result offset r g b a)))
+
+(define-cproc cairo-pattern-get-color-stop-count (pattern::<cairo-pattern>) :: <fixnum>
+  (ENSURE_NOT_NULL pattern)
+  (let* ([count::int])
+    (cairo_pattern_get_color_stop_count pattern (& count))
+    (result count)))
+
+(define-cproc cairo-pattern-get-linear-points (pattern::<cairo-pattern>)
+  :: (<real> <real> <real> <real>)
+  (ENSURE_NOT_NULL pattern)
+  (let* ([x0::double]
+         [y0::double]
+         [x1::double]
+         [y1::double])
+    (cairo_pattern_get_linear_points pattern (& x0) (& y0) (& x1) (& y1))
+    (result x0 y0 x1 y1)))
+
+(define-cproc cairo-pattern-get-radial-circles (pattern::<cairo-pattern>)
+  :: (<real> <real> <real> <real> <real> <real>)
+  (ENSURE_NOT_NULL pattern)
+  (let* ([x0::double]
+         [y0::double]
+         [r0::double]
+         [x1::double]
+         [y1::double]
+         [r1::double])
+    (cairo_pattern_get_radial_circles pattern
+                                      (& x0) (& y0) (& r0)
+                                      (& x1) (& y1) (& r1))
+    (result x0 y0 r0 x1 y1 r1)))
+
+;;
+;; Matrix functions
+;;
+
+(define-cproc cairo-matrix-init (xx::<real> yx::<real> xy::<real> yy::<real> x0::<real> y0::<real>
+                                            :optional matrix) :: <top>
+  (let* ([m::cairo_matrix_t])
+    (cairo_matrix_init (& m)
+                       xx yx xy yy x0 y0)
+    (if (unbound? matrix)
+      (result (boxing m <cairo-matrix>))
+      (begin
+        (set! (unboxing matrix <cairo-matrix>) m)
+        (result matrix)))))
+
+(define-cproc cairo-matrix-init-identity (:optional matrix) :: <top>
+  (let* ([m::cairo_matrix_t])
+    (cairo_matrix_init_identity (& m))
+    (if (unbound? matrix)
+      (result (boxing m <cairo-matrix>))
+      (begin
+        (set! (unboxing matrix <cairo-matrix>) m)
+        (result matrix)))))
+
+(define-cproc cairo-matrix-init-translate (tx::<real> ty::<real> :optional matrix) :: <top>
+  (let* ([m::cairo_matrix_t])
+    (cairo_matrix_init_translate (& m) tx ty)
+    (if (unbound? matrix)
+      (result (boxing m <cairo-matrix>))
+      (begin
+        (set! (unboxing matrix <cairo-matrix>) m)
+        (result matrix)))))
+
+(define-cproc cairo-matrix-init-scale (sx::<real> sy::<real> :optional matrix) :: <top>
+  (let* ([m::cairo_matrix_t])
+    (cairo_matrix_init_scale (& m) sx sy)
+    (if (unbound? matrix)
+      (result (boxing m <cairo-matrix>))
+      (begin
+        (set! (unboxing matrix <cairo-matrix>) m)
+        (result matrix)))))
+
+(define-cproc cairo-matrix-init-rotate (radians::<real> :optional matrix) :: <top>
+  (let* ([m::cairo_matrix_t])
+    (cairo_matrix_init_rotate (& m) radians)
+    (if (unbound? matrix)
+      (result (boxing m <cairo-matrix>))
+      (begin
+        (set! (unboxing matrix <cairo-matrix>) m)
+        (result matrix)))))
+
+(define-cproc cairo-matrix-translate (matrix::<cairo-matrix> tx::<real> ty::<real>) :: <cairo-matrix>
+  (cairo_matrix_translate (& matrix) tx ty)
+  (result matrix))
+
+(define-cproc cairo-matrix-scale (matrix::<cairo-matrix> sx::<real> sy::<real>) :: <cairo-matrix>
+  (cairo_matrix_scale (& matrix) sx sy)
+  (result matrix))
+
+(define-cproc cairo-matrix-rotate (matrix::<cairo-matrix> radians::<real>) :: <cairo-matrix>
+  (cairo_matrix_rotate (& matrix) radians)
+  (result matrix))
+
+(define-cproc cairo-matrix-invert (matrix::<cairo-matrix>) :: <cairo-matrix>
+  (cairo_matrix_invert (& matrix))
+  (result matrix))
+
+(define-cproc cairo-matrix-multiply (a::<cairo-matrix> b::<cairo-matrix>) :: <cairo-matrix>
+  (let* ([matrix::cairo_matrix_t])
+    (cairo_matrix_multiply (& matrix) (& a) (& b))
+    (result matrix)))
+
+(define-cproc cairo-matrix-transform-distance (matrix::<cairo-matrix> x::<real> y::<real>) :: (<real> <real>)
+  (cairo_matrix_transform_distance (& matrix) (& x) (& y))
+  (result x y))
+
+(define-cproc cairo-matrix-transform-point (matrix::<cairo-matrix> x::<real> y::<real>) :: (<real> <real>)
+  (cairo_matrix_transform_point (& matrix) (& x) (& y))
+  (result x y))
+
