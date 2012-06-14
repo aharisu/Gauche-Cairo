@@ -1487,3 +1487,20 @@
   (cairo_matrix_transform_point (& matrix) (& x) (& y))
   (result x y))
 
+(define-cproc cairo-matfix-ref (matrix::<cairo-matrix> i::<fixnum>) :: <real>
+  (let* ([m::double* (cast _double_t* (& matrix))])
+    (result (aref m i))))
+
+(define-cproc cairo-matfix-ref2 (matrix::<cairo-matrix> i::<fixnum> j::<fixnum>) :: <real>
+  (let* ([m::double* (cast _double_t* (& matrix))])
+    (result (aref m (+ (* i 2) j)))))
+
+(define-cproc cairo-matfix-set! (matrix::<cairo-matrix> i::<fixnum> v::<real>) :: <void>
+  (let* ([m::double* (cast _double_t* (& matrix))])
+    (set!  (aref m i) v)))
+
+(define-cproc cairo-matfix-set2! (matrix::<cairo-matrix> i::<fixnum> j::<fixnum> v::<real>) :: <void>
+  (let* ([m::double* (cast _double_t* (& matrix))])
+    (set! (aref m (+ (* i 2) j)) v)))
+
+
