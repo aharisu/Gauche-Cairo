@@ -1442,17 +1442,37 @@
   (cairo_matrix_translate (& matrix) tx ty)
   (result matrix))
 
+(define-cproc cairo-matrix-translate! (matrix::<cairo-matrix> tx::<real> ty::<real>) :: <top>
+  (cairo_matrix_translate (& matrix) tx ty)
+  (set! (unboxing matrix-scm <cairo-matrix>) matrix)
+  (result matrix-scm))
+
 (define-cproc cairo-matrix-scale (matrix::<cairo-matrix> sx::<real> sy::<real>) :: <cairo-matrix>
   (cairo_matrix_scale (& matrix) sx sy)
   (result matrix))
+
+(define-cproc cairo-matrix-scale! (matrix::<cairo-matrix> sx::<real> sy::<real>) :: <top>
+  (cairo_matrix_scale (& matrix) sx sy)
+  (set! (unboxing matrix-scm <cairo-matrix>) matrix)
+  (result matrix-scm))
 
 (define-cproc cairo-matrix-rotate (matrix::<cairo-matrix> radians::<real>) :: <cairo-matrix>
   (cairo_matrix_rotate (& matrix) radians)
   (result matrix))
 
+(define-cproc cairo-matrix-rotate! (matrix::<cairo-matrix> radians::<real>) :: <top>
+  (cairo_matrix_rotate (& matrix) radians)
+  (set! (unboxing matrix-scm <cairo-matrix>) matrix)
+  (result matrix-scm))
+
 (define-cproc cairo-matrix-invert (matrix::<cairo-matrix>) :: <cairo-matrix>
   (cairo_matrix_invert (& matrix))
   (result matrix))
+
+(define-cproc cairo-matrix-invert! (matrix::<cairo-matrix>) :: <top>
+  (cairo_matrix_invert (& matrix))
+  (set! (unboxing matrix-scm <cairo-matrix>) matrix)
+  (result matrix-scm))
 
 (define-cproc cairo-matrix-multiply (a::<cairo-matrix> b::<cairo-matrix>) :: <cairo-matrix>
   (let* ([matrix::cairo_matrix_t])
