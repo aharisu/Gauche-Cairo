@@ -1,0 +1,105 @@
+# General info
+SHELL       = @SHELL@
+prefix      = @prefix@
+exec_prefix = @exec_prefix@
+bindir      = @bindir@
+libdir      = @libdir@
+datadir     = @datadir@
+datarootdir = @datarootdir@
+srcdir      = @srcdir@
+VPATH       = $(srcdir)
+
+# These may be overridden by make invocators
+DESTDIR        =
+GOSH           = "@GOSH@"
+GAUCHE_CONFIG  = "@GAUCHE_CONFIG@"
+GAUCHE_PACKAGE = "@GAUCHE_PACKAGE@"
+INSTALL        = "@GAUCHE_INSTALL@" -C
+
+SCRIPTDIR = "@SCRIPTDIR@"
+OUTDIR = "@OUTDIR@"
+GENSTUB = "@GENSTUB@"
+
+# Other parameters
+SOEXT  = @SOEXT@
+OBJEXT = @OBJEXT@
+EXEEXT = @EXEEXT@
+LOCAL_PATHS = "@LOCAL_PATHS@"
+RSVG_CFLAGS = @RSVG_CFLAGS@
+RSVG_LIBS = @RSVG_LIBS@
+
+# Module-specific stuff
+PACKAGE = @PACKAGE@
+
+ARCHFILES = gauche_rsvg.$(SOEXT)
+HEADERS   = 
+
+TARGET    = $(ARCHFILES)
+GENERATED = *.o *.gen.* *lib.c $(ARCHFILES)
+CONFIG_GENERATED = Makefile
+
+GAUCHE_PKGINCDIR  = "$(DESTDIR)@GAUCHE_PKGINCDIR@"
+GAUCHE_PKGLIBDIR  = "$(DESTDIR)@GAUCHE_PKGLIBDIR@"
+GAUCHE_PKGARCHDIR = "$(DESTDIR)@GAUCHE_PKGARCHDIR@"
+
+MINGW_STATIC_LIBGCC = @MINGW_STATIC_LIBGCC@
+
+rsvg_TYPE_HDRS = rsvg_type.gen.h	\
+								 macro.stub.header	\
+
+rsvg_STUB_TYPE_HDRS = rsvg_type.gen.stub.header \
+
+rsvg_SRCS = gauche_rsvg.c \
+						rsvglib.c \
+						rsvg_type.gen.c	\
+
+all : $(TARGET)
+
+#generate stub -> c file
+.SUFFIXES:.stub .c
+
+.stub.c:
+	$(GOSH) -I$(SCRIPTDIR) $(GENSTUB) $<
+
+rsvglib.c: $(rsvg_STUB_TYPE_HDRS)
+
+#generate type file
+rsvg_type.gen.c rsvg_type.gen.h rsvg_type.gen.stub.header: rsvg_type.scm
+	$(GOSH) -I$(SCRIPTDIR) rsvg_type.scm
+
+#compile rsvg
+gauche_rsvg.$(SOEXT): $(rsvg_SRCS)
+	$(GAUCHE_PACKAGE) compile \
+		--cflags="$(RSVG_CFLAGS)" \
+		--local=$(LOCAL_PATHS) \
+		--verbose \
+		--libs="$(RSVG_LIBS) '-L$(GAUCHE_PKGARCHDIR)'" \
+		gauche_rsvg \
+		$(rsvg_SRCS)
+
+test : all
+	@rm -f test.log
+	$(GOSH) -I. -I$(srcdir) $(srcdir)/test.scm > test.log
+
+install :
+	$(INSTALL) -m 444 -T $(GAUCHE_PKGINCDIR) $(HEADERS)
+	$(INSTALL) -m 555 -T $(GAUCHE_PKGARCHDIR) $(ARCHFILES)
+
+uninstall :
+	$(INSTALL) -U $(GAUCHE_PKGINCDIR) $(HEADERS)
+	$(INSTALL) -U $(GAUCHE_PKGARCHDIR) $(ARCHFILES)
+
+clean :
+	$(GAUCHE_PACKAGE) compile --clean gauche_rsvg $(rsvg_SRCS)
+	rm -rf core $(TARGET) $(GENERATED) *~ test.log so_locations
+
+realclean : clean
+	rm -rf $(CONFIG_GENERATED)
+
+maintainer-clean : clean
+	rm -rf $(CONFIG_GENERATED)
+
+collect :
+	@if test "$(HEADERS)" != ""; then (cp -p -u $(HEADERS) $(OUTDIR)/header/); fi
+	@if test "$(ARCHFILES)" != ""; then (cp -p -u $(ARCHFILES) $(OUTDIR)/dll/); fi
+

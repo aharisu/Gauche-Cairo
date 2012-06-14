@@ -16,6 +16,8 @@ GAUCHE_CONFIG  = "@GAUCHE_CONFIG@"
 GAUCHE_PACKAGE = "@GAUCHE_PACKAGE@"
 INSTALL        = "@GAUCHE_INSTALL@" -C
 
+HAVE_RSVG = @HAVE_RSVG@
+
 # Other parameters
 SOEXT  = @SOEXT@
 OBJEXT = @OBJEXT@
@@ -53,6 +55,7 @@ cairo_SRCS = gauche_cairo.c \
 	     cairo_type.gen.c	\
 
 all : $(TARGET)
+	@if test X$(HAVE_RSVG) != X; then (cd rsvg; $(MAKE) all); fi
 
 
 #generate sutb -> c file
@@ -82,23 +85,30 @@ gauche_cairo.$(SOEXT): $(cairo_SRCS) $(cairo_TYPE_HDRS) $(cairo_STUB_TYPE_HDRS)
 check :
 	@rm -f test.log
 	$(GOSH) -I. -I$(srcdir) test.scm > test.log
+	@if test X$(HAVE_RSVG) != X; then (cd rsvg; $(MAKE) check); fi
 
 install :
 	$(INSTALL) -m 555 -T $(GAUCHE_PKGARCHDIR) $(ARCHFILES)
+	@if test X$(HAVE_RSVG) != X; then (cd rsvg; $(MAKE) install); fi
 
 uninstall :
 	$(INSTALL) -U $(GAUCHE_PKGARCHDIR) $(ARCHFILES)
+	@if test X$(HAVE_RSVG) != X; then (cd rsvg; $(MAKE) uninstall); fi
 
 clean :
 	$(GAUCHE_PACKAGE) compile --clean $(cairo_SRCS) 
 	rm -rf $(TARGET) $(GENERATED) *~ test.log so_locations
+	@if test X$(HAVE_RSVG) != X; then (cd rsvg; $(MAKE) clean); fi
 
 distclean : clean
 	rm -rf $(CONFIG_GENERATED)
+	@if test X$(HAVE_RSVG) != X; then (cd rsvg; $(MAKE) distclean); fi
 
 maintainer-clean : clean
 	rm -rf $(CONFIG_GENERATED) configure VERSION
+	@if test X$(HAVE_RSVG) != X; then (cd rsvg; $(MAKE) maintainer-clean); fi
 
 collect :
 	@if test "$(ARCHFILES)" != ""; then (cp -p -u $(ARCHFILES) $(OUTDIR)/dll/); fi
+	@if test X$(HAVE_RSVG) != X; then (cd rsvg; $(MAKE) collect); fi
 

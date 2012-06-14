@@ -66,6 +66,10 @@ dnl Add your macro calls to check required libraries, if you have any.
 PKG_CHECK_MODULES([CAIRO], [cairo])
 AC_SUBST(CAIRO_CFLAGS)
 AC_SUBST(CAIRO_LIBS)
+PKG_CHECK_MODULES([RSVG], [librsvg-2.0], [HAVE_RSVG=rsvg],[echo 'To load the svg is required librsvg-2.0'])
+AC_SUBST(RSVG_CFLAGS)
+AC_SUBST(RSVG_LIBS)
+AC_SUBST(HAVE_RSVG)
 
 AC_CHECK_LIB(nnvector, Scm_Init_libnnvector)
 
@@ -98,5 +102,5 @@ AC_MSG_NOTICE([creating ${PACKAGE_NAME}.gpd])
 
 dnl Output
 echo $PACKAGE_VERSION > VERSION
-AC_OUTPUT(Makefile src/Makefile lib/Makefile)
+AC_OUTPUT(Makefile src/Makefile src/rsvg/Makefile lib/Makefile lib/cairo/Makefile)
 

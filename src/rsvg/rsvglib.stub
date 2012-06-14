@@ -1,0 +1,112 @@
+;;;
+;;; rsvglib.stub
+;;;
+;;; MIT License
+;;; Copyright 2012 aharisu
+;;; All rights reserved.
+;;;
+;;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;;; of this software and associated documentation files (the "Software"), to deal
+;;; in the Software without restriction, including without limitation the rights
+;;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+;;; copies of the Software, and to permit persons to whom the Software is
+;;; furnished to do so, subject to the following conditions:
+;;;
+;;; The above copyright notice and this permission notice shall be included in all
+;;; copies or substantial portions of the Software.
+;;;
+;;;
+;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+;;; SOFTWARE.
+;;;
+;;;
+;;; aharisu
+;;; foo.yobina@gmail.com
+;;;
+
+
+"
+#include \"gauche_rsvg.h\" 
+#include \"../cairo_type.gen.h\"
+#include \"rsvg_type.gen.h\"
+"
+
+(include "../cairo_type.gen.stub.header")
+(include "rsvg_type.gen.stub.header")
+(include "../macro.stub.header")
+
+(define-cise-stmt check-error 
+  [(_ func-name err)
+   `(when err
+      (let* ([msg::gchar* (SCM_NEW_ARRAY gchar (strlen (@ err->message)))])
+        (strcpy msg (@ err->message))
+        (g_error_free err)
+        (Scm_Error "%s: %s"
+                   ,(symbol->string func-name)
+                   msg)))])
+
+(define-cclass <rsvg-dimension>
+  :built-in :struct
+  "ScmRsvgDimensionData*" "Scm_RsvgDimensionDataClass"
+  ()
+  (
+   (width :type <fixnum>)
+   (height :type <fixnum>)
+   (em :type <real>)
+   (ex :type <real>)
+   )
+  (printer #t)
+  (compare #t))
+
+(define-cproc rsvg-init () :: <void>
+  (rsvg_init))
+
+(define-cproc rsvg-term () :: <void>
+  (rsvg_term))
+
+(define-cproc rsvg-set-handle-dpi (handle::<rsvg> dpi::<real>) :: <void>
+  (rsvg_handle_set_dpi handle dpi))
+
+(define-cproc rsvg-set-handle-dpi-x-y (handle::<rsvg> dpi-x::<real> dpi-y::<real>) :: <void>
+  (rsvg_handle_set_dpi_x_y handle dpi-x dpi-y))
+
+(define-cproc rsvg-set-default-dpi (dpi::<real>) :: <void>
+  (rsvg_set_default_dpi dpi))
+
+(define-cproc rsvg-set-default-dpi-x-y (dpi-x::<real> dpi-y::<real>) :: <void>
+  (rsvg_set_default_dpi_x_y dpi-x dpi-y))
+
+;; skip
+#|
+(define-cproc rsvg-handle-new () :: <rsvg>
+  (result (rsvg_handle_new)))
+|#
+
+(define-cproc rsvg-handle-get-dimensions (handle::<rsvg>) :: <rsvg-dimension>
+  (ENSURE_NOT_NULL handle)
+  (let* ([dim::RsvgDimensionData])
+    (rsvg_handle_get_dimensions handle (& dim))
+    (result dim)))
+
+(define-cproc rsvg-handle-free (handle::<rsvg>) :: <void>
+  (when handle
+    (rsvg_handle_free handle)
+    (set! (-> (SCM_FOREIGN_POINTER handle-scm) ptr) 0)))
+
+(define-cproc rsvg-handle-new-from-file (filename::<const-cstring>) :: <rsvg>
+  (let* ([err::GError* 0]
+         [handle::RsvgHandle* (rsvg_handle_new_from_file filename (& err))])
+    (check-error rsvg-handle-new-from-file err)
+    (result handle)))
+
+(define-cproc rsvg-handle-render-cairo (handle::<rsvg> cr::<cairo>) :: <void>
+  (ENSURE_NOT_NULL handle)
+  (ENSURE_NOT_NULL cr)
+  (rsvg_handle_render_cairo handle cr))
+
+

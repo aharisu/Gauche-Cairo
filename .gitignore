@@ -24,3 +24,4 @@ TODO.txt
 /out/LICENSE
 
 /lib/cairo.scm
+/lib/cairo/rsvg.scm

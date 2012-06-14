@@ -33,6 +33,7 @@ GENERATED = cairo.scm
 CONFIG_GENERATED = Makefile
 
 all : $(SCMFILES)
+	cd cairo ; $(MAKE) all
 
 cairo.scm: $(STUBDIR)/cairolib.stub cairo-no-nnvector.template cairo-with-nnvector.template
 	if test "$(filter -DHAVE_LIBNNVECTOR=1, $(DEFS))" == ""; then \
@@ -42,6 +43,7 @@ cairo.scm: $(STUBDIR)/cairolib.stub cairo-no-nnvector.template cairo-with-nnvect
 	fi
 
 test :
+	cd cairo ; $(MAKE) test
 
 install :
 	@if test ! -d $(GAUCHE_PKGLIBDIR); then \
@@ -52,6 +54,7 @@ install :
 	    $(INSTALL) -m 444 $$f $(GAUCHE_PKGLIBDIR)/$$f; \
 	  fi; \
 	done
+	cd cairo ; $(MAKE) install
 
 uninstall :
 	@for f in $(SCMFILES) _end; do \
@@ -59,16 +62,22 @@ uninstall :
 	    $(INSTALL) -U $(GAUCHE_PKGLIBDIR) $$f; \
 	  fi; \
 	done
+	cd cairo ; $(MAKE) uninstall
 
 clean :
 	rm -rf core *~ $(GENERATED)
+	cd cairo ; $(MAKE) clean
 
 realclean : clean
 	rm -rf $(CONFIG_GENERATED)
+	cd cairo ; $(MAKE) realclean
 
 maintainer-clean : clean
 	rm -rf $(CONFIG_GENERATED)
+	cd cairo ; $(MAKE) maintainer-clean
 
 collect :
 	@mkdir -p $(OUTDIR)/scm
 	@if test "$(SCMFILES)" != ""; then (cp -p -u $(SCMFILES) $(OUTDIR)/scm/); fi
+	cd cairo ; $(MAKE) collect
+
